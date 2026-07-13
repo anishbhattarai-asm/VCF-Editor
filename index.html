@@ -1,0 +1,1217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cardfile — free vCard (.vcf) editor</title>
+<meta name="description" content="Edit, merge and create vCard (.vcf) contact files entirely in your browser. Nothing is uploaded — your contacts never leave this device.">
+<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect x="3" y="9" width="26" height="19" rx="3" fill="%232B4FD8"/><rect x="7" y="5" width="10" height="6" rx="2" fill="%232B4FD8"/><rect x="7" y="15" width="8" height="8" rx="4" fill="white"/><rect x="18" y="16" width="8" height="2.4" rx="1.2" fill="white" opacity=".9"/><rect x="18" y="20.6" width="6" height="2.4" rx="1.2" fill="white" opacity=".6"/></svg>'>
+<meta name="theme-color" content="#2B4FD8">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --steel-100:#EDF0F3;
+  --steel-200:#E2E7EC;
+  --steel-300:#D3DAE1;
+  --hairline:#C7D0D9;
+  --card:#FFFFFF;
+  --ink:#1F2833;
+  --ink-soft:#5C6B7A;
+  --ink-faint:#8B98A5;
+  --pen:#2B4FD8;
+  --pen-deep:#1F3AA6;
+  --pen-wash:#E7ECFB;
+  --flag:#F2C14E;
+  --danger:#B3372B;
+  --danger-wash:#F7E9E7;
+  --radius:10px;
+  --sans:"Archivo",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:var(--sans);
+  background:var(--steel-100);
+  color:var(--ink);
+  font-size:14px;
+  line-height:1.45;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+:focus-visible{outline:2px solid var(--pen);outline-offset:2px;border-radius:4px}
+button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,textarea,select{font:inherit;color:inherit}
+
+/* ---------- header ---------- */
+.top{
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  padding:12px 18px;
+  background:var(--steel-200);
+  border-bottom:1px solid var(--hairline);
+}
+.brand{
+  font-stretch:125%;font-weight:800;font-size:17px;letter-spacing:.14em;
+  display:flex;align-items:baseline;gap:10px;user-select:none;
+}
+.brand .dot{color:var(--pen)}
+.brand-sub{
+  font-stretch:100%;font-weight:500;font-size:11px;letter-spacing:.08em;
+  color:var(--ink-soft);text-transform:uppercase;
+}
+.top-actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.btn{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:8px 14px;border-radius:8px;
+  font-weight:600;font-size:13px;letter-spacing:.01em;
+  border:1px solid var(--hairline);background:var(--card);color:var(--ink);
+  transition:background .12s, border-color .12s, transform .06s;
+}
+.btn:hover{border-color:var(--ink-faint)}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--pen);border-color:var(--pen);color:#fff}
+.btn-primary:hover{background:var(--pen-deep);border-color:var(--pen-deep)}
+.btn-quiet{background:transparent}
+.btn-danger{color:var(--danger);border-color:var(--danger-wash);background:var(--danger-wash)}
+.btn-danger:hover{border-color:var(--danger)}
+.btn svg{flex:none}
+
+/* ---------- layout ---------- */
+.split{flex:1;display:flex;min-height:0}
+.drawer{
+  width:320px;flex:none;display:flex;flex-direction:column;min-height:0;
+  border-right:1px solid var(--hairline);background:var(--steel-100);
+}
+.stage{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0;overflow:auto;background:var(--steel-100)}
+
+/* ---------- drawer ---------- */
+.searchwrap{padding:12px 12px 8px}
+.search{
+  width:100%;padding:9px 12px 9px 34px;
+  border:1px solid var(--hairline);border-radius:8px;background:var(--card);
+  font-family:var(--mono);font-size:13px;
+  background-image:url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="%235C6B7A" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/></svg>');
+  background-repeat:no-repeat;background-position:11px center;
+}
+.search::placeholder{color:var(--ink-faint);font-family:var(--sans)}
+.listzone{flex:1;display:flex;min-height:0}
+.list{flex:1;overflow-y:auto;padding:2px 0 14px;scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){.list{scroll-behavior:auto}}
+.row{
+  width:100%;display:flex;align-items:center;gap:10px;text-align:left;
+  padding:8px 10px 8px 14px;border-left:3px solid transparent;
+}
+.row:hover{background:var(--steel-200)}
+.row.sel{background:var(--pen-wash);border-left-color:var(--pen)}
+.avatar{
+  width:34px;height:34px;border-radius:50%;flex:none;overflow:hidden;
+  background:var(--steel-300);color:var(--ink-soft);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:14px;
+}
+.row.sel .avatar{background:var(--pen);color:#fff}
+.avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.row-meta{min-width:0}
+.row-name{font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row-sub{font-family:var(--mono);font-size:11px;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rail{
+  flex:none;width:26px;display:flex;flex-direction:column;align-items:center;
+  padding:6px 0;overflow-y:auto;scrollbar-width:none;
+}
+.rail::-webkit-scrollbar{display:none}
+.rail button{
+  font-family:var(--mono);font-size:9.5px;font-weight:600;line-height:1.65;
+  color:var(--pen);width:100%;border-radius:4px;
+}
+.rail button:hover{background:var(--pen-wash)}
+.rail button:disabled{color:var(--ink-faint);opacity:.45;cursor:default;background:none}
+.list-empty{padding:26px 18px;color:var(--ink-soft);font-size:13px}
+
+/* ---------- stage / card ---------- */
+.stagepad{padding:22px;max-width:780px;width:100%;margin:0 auto}
+.cardwrap{perspective:1800px}
+.flipper{position:relative;transform-style:preserve-3d;transition:transform .55s cubic-bezier(.2,.75,.25,1)}
+.flipper.flip{transform:rotateY(180deg)}
+@media (prefers-reduced-motion:reduce){.flipper{transition:none}}
+.face{
+  background:var(--card);border:1px solid var(--hairline);border-radius:var(--radius);
+  box-shadow:0 1px 2px rgba(31,40,51,.05),0 10px 26px -18px rgba(31,40,51,.25);
+  backface-visibility:hidden;-webkit-backface-visibility:hidden;
+}
+.face-front{position:relative;z-index:1}
+.face-back{
+  position:absolute;inset:0;transform:rotateY(180deg);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+
+/* index-card tab */
+.cardtab{
+  position:absolute;top:-13px;left:22px;
+  background:var(--pen);color:#fff;
+  font-family:var(--mono);font-weight:600;font-size:11px;letter-spacing:.12em;
+  padding:4px 14px;border-radius:7px 7px 0 0;
+  text-transform:uppercase;
+}
+.cardhead{
+  display:flex;gap:18px;align-items:flex-start;
+  padding:26px 24px 18px;border-bottom:1px solid var(--steel-200);
+}
+.photo{
+  width:96px;height:96px;flex:none;border-radius:10px;overflow:hidden;position:relative;
+  background:var(--steel-200);border:1px solid var(--hairline);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--ink-faint);font-size:30px;font-weight:700;cursor:pointer;
+}
+.photo img{width:100%;height:100%;object-fit:cover;display:block}
+.photo .photo-hint{
+  position:absolute;inset:auto 0 0 0;text-align:center;
+  font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  background:rgba(31,40,51,.72);color:#fff;padding:3px 0;
+  opacity:0;transition:opacity .12s;
+}
+.photo:hover .photo-hint,.photo:focus-visible .photo-hint{opacity:1}
+.photo-x{
+  position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;
+  background:rgba(31,40,51,.75);color:#fff;font-size:12px;line-height:1;
+  display:none;align-items:center;justify-content:center;
+}
+.photo.haspic .photo-x{display:flex}
+.headmeta{flex:1;min-width:0}
+.headname{font-stretch:112%;font-weight:800;font-size:24px;line-height:1.15;overflow-wrap:anywhere}
+.headsub{font-family:var(--mono);font-size:12px;color:var(--ink-soft);margin-top:4px;overflow-wrap:anywhere}
+.headtools{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.mini{
+  font-size:11.5px;font-weight:600;padding:5px 10px;border-radius:6px;
+  border:1px solid var(--hairline);background:var(--steel-100);
+  display:inline-flex;align-items:center;gap:6px;
+}
+.mini:hover{border-color:var(--ink-faint)}
+
+/* form */
+.form{padding:20px 24px 24px;display:flex;flex-direction:column;gap:16px}
+.frow{display:grid;grid-template-columns:132px 1fr;gap:12px;align-items:center}
+.frow > label{
+  font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--ink-soft);
+}
+.fgrid{display:grid;gap:8px}
+.g3{grid-template-columns:1fr 1fr 1fr}
+.g2{grid-template-columns:1fr 1fr}
+.fin{
+  width:100%;padding:8px 10px;border:1px solid var(--hairline);border-radius:7px;
+  background:var(--card);font-family:var(--mono);font-size:13px;
+  transition:border-color .12s;
+}
+.fin:hover{border-color:var(--ink-faint)}
+.fin:focus{border-color:var(--pen);outline:none;box-shadow:0 0 0 3px var(--pen-wash)}
+.fin::placeholder{color:var(--ink-faint);font-family:var(--sans);font-size:12.5px}
+textarea.fin{resize:vertical;min-height:76px;line-height:1.5}
+.inline-note{font-size:11.5px;color:var(--ink-soft)}
+.agechip{
+  font-family:var(--mono);font-size:11px;color:var(--pen);
+  background:var(--pen-wash);border-radius:5px;padding:3px 8px;white-space:nowrap;
+}
+.bdayline{display:flex;gap:10px;align-items:center}
+.bdayline .fin{max-width:180px}
+details.adr{border:1px solid var(--steel-200);border-radius:8px;background:var(--steel-100)}
+details.adr summary{
+  cursor:pointer;list-style:none;padding:9px 12px;
+  font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-soft);
+  display:flex;align-items:center;gap:8px;user-select:none;
+}
+details.adr summary::before{content:"+";font-family:var(--mono);color:var(--pen);width:10px}
+details.adr[open] summary::before{content:"–"}
+details.adr summary .adr-preview{
+  font-family:var(--mono);font-weight:400;font-size:11px;letter-spacing:0;text-transform:none;
+  color:var(--ink-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;text-align:right;
+}
+.adrbody{padding:4px 12px 12px;display:grid;gap:8px}
+.adrbody .g2{grid-template-columns:1.4fr 1fr}
+.cardfoot{
+  display:flex;gap:8px;justify-content:flex-end;align-items:center;
+  padding:14px 24px;border-top:1px solid var(--steel-200);
+}
+
+/* raw back */
+.rawhead{
+  display:flex;align-items:center;gap:10px;flex:none;
+  padding:14px 18px;border-bottom:1px solid var(--steel-200);
+}
+.rawtitle{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.12em;color:var(--ink-soft)}
+.rawhead .mini{margin-left:auto}
+.rawpre{
+  flex:1;overflow:auto;margin:0;padding:16px 18px;
+  font-family:var(--mono);font-size:12px;line-height:1.6;color:var(--ink);
+  white-space:pre-wrap;word-break:break-all;
+}
+.rawpre .k{color:var(--pen);font-weight:600}
+
+/* empty state */
+.empty{
+  border:2px dashed var(--steel-300);border-radius:14px;background:transparent;
+  padding:60px 30px;text-align:center;margin-top:14px;
+}
+.empty h2{font-stretch:112%;font-weight:800;font-size:21px;margin-bottom:8px}
+.empty p{color:var(--ink-soft);max-width:420px;margin:0 auto 20px}
+.empty .privline{
+  font-family:var(--mono);font-size:11px;color:var(--pen);
+  margin-top:22px;letter-spacing:.04em;
+}
+.empty-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+
+/* status bar */
+.status{
+  flex:none;display:flex;align-items:center;gap:14px;
+  padding:7px 18px;border-top:1px solid var(--hairline);background:var(--steel-200);
+  font-family:var(--mono);font-size:11px;color:var(--ink-soft);
+}
+.status .flagged{color:#8a6a14;display:none;align-items:center;gap:6px}
+.status .flagged::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--flag);display:inline-block}
+body.dirty .status .flagged{display:inline-flex}
+.status .spacer{flex:1}
+
+/* toasts + drop veil */
+.toasthold{position:fixed;bottom:44px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:60;pointer-events:none}
+.toast{
+  background:var(--ink);color:#fff;font-size:12.5px;font-weight:500;
+  padding:9px 16px;border-radius:8px;box-shadow:0 6px 18px -6px rgba(31,40,51,.4);
+  animation:pop .18s ease-out;
+}
+@keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.toast{animation:none}}
+.dropveil{
+  position:fixed;inset:0;z-index:70;display:none;align-items:center;justify-content:center;
+  background:rgba(43,79,216,.12);backdrop-filter:blur(2px);
+  border:3px dashed var(--pen);
+}
+.dropveil.on{display:flex}
+.dropveil span{
+  background:var(--pen);color:#fff;font-weight:700;font-size:15px;
+  padding:12px 22px;border-radius:10px;letter-spacing:.02em;
+}
+
+/* mobile */
+.backbtn{display:none}
+@media (max-width:880px){
+  body{overflow:auto}
+  .split{flex-direction:column}
+  .drawer{width:100%;flex:1;border-right:none}
+  .stage{display:none}
+  body.mob-card .drawer{display:none}
+  body.mob-card .stage{display:flex}
+  .backbtn{display:inline-flex}
+  .stagepad{padding:16px 12px}
+  .cardhead{flex-wrap:wrap}
+  .frow{grid-template-columns:1fr;gap:5px}
+  .g3{grid-template-columns:1fr}
+  .top{padding:10px 12px}
+  .brand-sub{display:none}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">CARDFILE<span class="dot">.</span>VCF <span class="brand-sub">vCard editor · works offline</span></div>
+  <div class="top-actions">
+    <button class="btn backbtn" id="backBtn" aria-label="Back to list">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M15 5l-7 7 7 7"/></svg>
+      List
+    </button>
+    <button class="btn" id="loadBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 16V4m0 0L7 9m5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+      Load vCards
+    </button>
+    <button class="btn" id="newBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+      New contact
+    </button>
+    <button class="btn btn-primary" id="exportBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 4v12m0 0 5-5m-5 5-5-5"/><path d="M4 17v1a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1"/></svg>
+      Export .vcf
+    </button>
+  </div>
+</header>
+
+<main class="split">
+  <aside class="drawer">
+    <div class="searchwrap">
+      <input class="search" id="q" type="search" placeholder="Search name, phone, email…  ( / )" autocomplete="off">
+    </div>
+    <div class="listzone">
+      <div class="list" id="list" role="listbox" aria-label="Contacts"></div>
+      <nav class="rail" id="rail" aria-label="Jump to letter"></nav>
+    </div>
+  </aside>
+
+  <section class="stage">
+    <div class="stagepad">
+
+      <div class="empty" id="empty">
+        <h2>Nothing loaded yet</h2>
+        <p>Drop a <b>.vcf</b> file anywhere on this page — exported from your phone, Google Contacts or Outlook — or start a fresh card. You can load several files and they'll merge into one list.</p>
+        <div class="empty-actions">
+          <button class="btn btn-primary" id="emptyLoad">Load vCards…</button>
+          <button class="btn" id="emptyNew">New contact</button>
+        </div>
+        <div class="privline">100% on-device · no upload · no account · no API</div>
+      </div>
+
+      <div class="cardwrap" id="cardwrap" hidden>
+        <div class="flipper" id="flipper">
+
+          <div class="face face-front">
+            <div class="cardtab" id="cardtab">A</div>
+            <div class="cardhead">
+              <div class="photo" id="photo" role="button" tabindex="0" aria-label="Change photo">
+                <span id="photoInitial">?</span>
+                <img id="photoImg" alt="" hidden>
+                <span class="photo-hint">Change</span>
+                <button class="photo-x" id="photoX" aria-label="Remove photo">×</button>
+              </div>
+              <div class="headmeta">
+                <div class="headname" id="headName">Unnamed</div>
+                <div class="headsub" id="headSub"></div>
+                <div class="headtools">
+                  <button class="mini" id="flipBtn">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3m13 5h3a2 2 0 0 0 2-2v-3"/></svg>
+                    View raw vCard
+                  </button>
+                  <button class="mini" id="exportOneBtn">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 4v12m0 0 5-5m-5 5-5-5"/></svg>
+                    Export this card
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="form">
+              <div class="frow">
+                <label>Name</label>
+                <div class="fgrid g3">
+                  <input class="fin" data-bind="n.given"  data-namefield placeholder="First"  aria-label="First name">
+                  <input class="fin" data-bind="n.middle" data-namefield placeholder="Middle" aria-label="Middle name">
+                  <input class="fin" data-bind="n.family" data-namefield placeholder="Last"   aria-label="Last name">
+                </div>
+              </div>
+
+              <div class="frow">
+                <label for="f-bday">Birthday</label>
+                <div class="bdayline">
+                  <input class="fin" id="f-bday" type="date" data-bind="bday">
+                  <span class="agechip" id="agechip" hidden></span>
+                </div>
+              </div>
+
+              <div class="frow">
+                <label for="f-org">Organization</label>
+                <input class="fin" id="f-org" data-bind="org" data-namefield placeholder="Company / school">
+              </div>
+
+              <div class="frow">
+                <label>Phone</label>
+                <div class="fgrid g3">
+                  <input class="fin" data-bind="telCell" type="tel" placeholder="Cell" aria-label="Cell phone">
+                  <input class="fin" data-bind="telHome" type="tel" placeholder="Home" aria-label="Home phone">
+                  <input class="fin" data-bind="telWork" type="tel" placeholder="Work" aria-label="Work phone">
+                </div>
+              </div>
+
+              <div class="frow">
+                <label>Email</label>
+                <div class="fgrid">
+                  <input class="fin" data-bind="emails.0" type="email" placeholder="Email 1" aria-label="Email 1">
+                  <input class="fin" data-bind="emails.1" type="email" placeholder="Email 2" aria-label="Email 2">
+                  <input class="fin" data-bind="emails.2" type="email" placeholder="Email 3" aria-label="Email 3">
+                </div>
+              </div>
+
+              <div class="frow">
+                <label for="f-url">Web site</label>
+                <input class="fin" id="f-url" type="url" data-bind="url" placeholder="https://…">
+              </div>
+
+              <details class="adr" id="adrHomeBox">
+                <summary>Address · Home <span class="adr-preview" id="adrHomePrev"></span></summary>
+                <div class="adrbody">
+                  <input class="fin" data-bind="adrHome.street" placeholder="Street" aria-label="Home street">
+                  <div class="fgrid g2">
+                    <input class="fin" data-bind="adrHome.city"   placeholder="City"   aria-label="Home city">
+                    <input class="fin" data-bind="adrHome.region" placeholder="Region / state" aria-label="Home region">
+                  </div>
+                  <div class="fgrid g2">
+                    <input class="fin" data-bind="adrHome.postal"  placeholder="Postal code" aria-label="Home postal code">
+                    <input class="fin" data-bind="adrHome.country" placeholder="Country" aria-label="Home country">
+                  </div>
+                </div>
+              </details>
+
+              <details class="adr" id="adrWorkBox">
+                <summary>Address · Work <span class="adr-preview" id="adrWorkPrev"></span></summary>
+                <div class="adrbody">
+                  <input class="fin" data-bind="adrWork.street" placeholder="Street" aria-label="Work street">
+                  <div class="fgrid g2">
+                    <input class="fin" data-bind="adrWork.city"   placeholder="City"   aria-label="Work city">
+                    <input class="fin" data-bind="adrWork.region" placeholder="Region / state" aria-label="Work region">
+                  </div>
+                  <div class="fgrid g2">
+                    <input class="fin" data-bind="adrWork.postal"  placeholder="Postal code" aria-label="Work postal code">
+                    <input class="fin" data-bind="adrWork.country" placeholder="Country" aria-label="Work country">
+                  </div>
+                </div>
+              </details>
+
+              <div class="frow">
+                <label for="f-note">Notes</label>
+                <textarea class="fin" id="f-note" data-bind="note" placeholder="Anything worth remembering"></textarea>
+              </div>
+            </div>
+
+            <div class="cardfoot">
+              <span class="inline-note" id="extrasNote" hidden></span>
+              <span style="flex:1"></span>
+              <button class="btn btn-danger" id="deleteBtn">Delete card</button>
+            </div>
+          </div>
+
+          <div class="face face-back">
+            <div class="rawhead">
+              <span class="rawtitle">RAW · vCard 3.0 · updates live</span>
+              <button class="mini" id="copyRawBtn">Copy</button>
+              <button class="mini" id="unflipBtn">← Back to card</button>
+            </div>
+            <pre class="rawpre" id="rawpre"></pre>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </section>
+</main>
+
+<footer class="status">
+  <span id="countLabel">0 contacts</span>
+  <span class="spacer"></span>
+  <span class="flagged">Changes not exported</span>
+</footer>
+
+<input type="file" id="fileInput" accept=".vcf,.vcard,text/vcard,text/x-vcard" multiple hidden>
+<input type="file" id="photoInput" accept="image/*" hidden>
+<div class="toasthold" id="toasthold"></div>
+<div class="dropveil" id="dropveil"><span>Drop .vcf to import</span></div>
+
+<script>
+/* ============ vCard core: parse + serialize (2.1 / 3.0 / 4.0 tolerant) ============ */
+
+function decodeQP(s) {
+  const bytes = [];
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] === '=' && /^[0-9A-Fa-f]{2}$/.test(s.substr(i + 1, 2))) {
+      bytes.push(parseInt(s.substr(i + 1, 2), 16));
+      i += 2;
+    } else {
+      bytes.push(s.charCodeAt(i) & 0xff);
+    }
+  }
+  try { return new TextDecoder('utf-8').decode(new Uint8Array(bytes)); }
+  catch (e) { return s; }
+}
+
+function unesc(s) {
+  return s.replace(/\\([\\;,nN])/g, (m, c) => (c === 'n' || c === 'N') ? '\n' : c);
+}
+
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/\\/g, '\\\\')
+    .replace(/\n/g, '\\n')
+    .replace(/;/g, '\\;')
+    .replace(/,/g, '\\,');
+}
+
+function splitEsc(s, sep) {
+  const out = []; let cur = '';
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] === '\\' && i + 1 < s.length) { cur += s[i] + s[i + 1]; i++; }
+    else if (s[i] === sep) { out.push(cur); cur = ''; }
+    else cur += s[i];
+  }
+  out.push(cur);
+  return out;
+}
+
+function parseProp(line) {
+  let inQ = false, idx = -1;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') inQ = !inQ;
+    else if (c === ':' && !inQ) { idx = i; break; }
+  }
+  if (idx < 0) return null;
+  const left = line.slice(0, idx);
+  let value = line.slice(idx + 1);
+  const segs = left.split(';');
+  let name = segs[0].trim().toUpperCase();
+  if (name.includes('.')) name = name.split('.').pop();
+  const params = { TYPE: [] };
+  for (const p of segs.slice(1)) {
+    if (!p) continue;
+    const eq = p.indexOf('=');
+    if (eq < 0) { params.TYPE.push(p.trim().toUpperCase()); }
+    else {
+      const k = p.slice(0, eq).trim().toUpperCase();
+      const v = p.slice(eq + 1).replace(/^"|"$/g, '');
+      if (k === 'TYPE') v.split(',').forEach(t => params.TYPE.push(t.trim().toUpperCase()));
+      else params[k] = v;
+    }
+  }
+  if (/QUOTED-PRINTABLE/i.test(params.ENCODING || '')) value = decodeQP(value);
+  return { name, params, value, raw: line };
+}
+
+function blankContact() {
+  return {
+    id: Math.random().toString(36).slice(2) + Date.now().toString(36),
+    n: { family: '', given: '', middle: '', prefix: '', suffix: '' },
+    fn: '', org: '', bday: '',
+    adrHome: { street: '', city: '', region: '', postal: '', country: '' },
+    adrWork: { street: '', city: '', region: '', postal: '', country: '' },
+    telCell: '', telHome: '', telWork: '',
+    emails: ['', '', ''],
+    url: '', note: '',
+    photo: null,
+    extras: []
+  };
+}
+
+function normBday(v) {
+  v = (v || '').trim();
+  const m = v.match(/^(\d{4})-?(\d{2})-?(\d{2})/);
+  if (m) return m[1] + '-' + m[2] + '-' + m[3];
+  return '';
+}
+
+function parseAdr(value) {
+  const p = splitEsc(value, ';').map(unesc);
+  const street = [p[0], p[1], p[2]].filter(Boolean).join(', ');
+  return { street, city: p[3] || '', region: p[4] || '', postal: p[5] || '', country: p[6] || '' };
+}
+
+function linesToContact(lines) {
+  const c = blankContact();
+  let emailIdx = 0;
+  for (const line of lines) {
+    const prop = parseProp(line);
+    if (!prop) continue;
+    const { name, params, value } = prop;
+    const types = params.TYPE;
+    switch (name) {
+      case 'VERSION': break;
+      case 'N': {
+        const p = splitEsc(value, ';').map(unesc);
+        c.n = { family: p[0] || '', given: p[1] || '', middle: p[2] || '', prefix: p[3] || '', suffix: p[4] || '' };
+        break;
+      }
+      case 'FN': c.fn = unesc(value); break;
+      case 'ORG': c.org = splitEsc(value, ';').map(unesc).filter(Boolean).join(' — '); break;
+      case 'BDAY': c.bday = normBday(value); if (!c.bday) c.extras.push(prop.raw); break;
+      case 'ADR': {
+        const a = parseAdr(value);
+        const emptyHome = !c.adrHome.street && !c.adrHome.city;
+        const emptyWork = !c.adrWork.street && !c.adrWork.city;
+        if (types.includes('WORK') && emptyWork) c.adrWork = a;
+        else if (emptyHome) c.adrHome = a;
+        else if (emptyWork) c.adrWork = a;
+        else c.extras.push(prop.raw);
+        break;
+      }
+      case 'TEL': {
+        const v = unesc(value);
+        if ((types.includes('CELL') || types.includes('MOBILE')) && !c.telCell) c.telCell = v;
+        else if (types.includes('WORK') && !c.telWork) c.telWork = v;
+        else if (types.includes('HOME') && !c.telHome) c.telHome = v;
+        else if (!c.telCell) c.telCell = v;
+        else if (!c.telHome) c.telHome = v;
+        else if (!c.telWork) c.telWork = v;
+        else c.extras.push(prop.raw);
+        break;
+      }
+      case 'EMAIL': {
+        const v = unesc(value);
+        if (emailIdx < 3) c.emails[emailIdx++] = v;
+        else c.extras.push(prop.raw);
+        break;
+      }
+      case 'URL': if (!c.url) c.url = unesc(value); else c.extras.push(prop.raw); break;
+      case 'NOTE': c.note = c.note ? c.note + '\n' + unesc(value) : unesc(value); break;
+      case 'PHOTO': {
+        const enc = (params.ENCODING || '').toUpperCase();
+        if (enc === 'B' || enc === 'BASE64' || (!value.includes(':') && /^[A-Za-z0-9+/=\s]+$/.test(value) && value.length > 100)) {
+          const t = (types[0] || params.MEDIATYPE || 'JPEG').replace('IMAGE/', '');
+          c.photo = { data: value.replace(/\s/g, ''), mime: 'image/' + t.toLowerCase() };
+        } else if (/^data:/i.test(value)) {
+          const m = value.match(/^data:([^;]+);base64,(.*)$/i);
+          if (m) c.photo = { data: m[2], mime: m[1] };
+        } else if (/^https?:/i.test(value)) {
+          c.photo = { url: value };
+        } else c.extras.push(prop.raw);
+        break;
+      }
+      default:
+        c.extras.push(prop.raw);
+    }
+  }
+  return c;
+}
+
+function parseVCF(text) {
+  text = String(text).replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
+  text = text.replace(/\n[ \t]/g, '');
+  const rawLines = text.split('\n');
+  const cards = [];
+  let cur = null;
+  for (let i = 0; i < rawLines.length; i++) {
+    let line = rawLines[i];
+    if (!line.trim()) continue;
+    const up = line.trim().toUpperCase();
+    if (up === 'BEGIN:VCARD') { cur = []; continue; }
+    if (up === 'END:VCARD') { if (cur) cards.push(cur); cur = null; continue; }
+    if (!cur) continue;
+    if (/ENCODING=QUOTED-PRINTABLE/i.test(line)) {
+      while (line.endsWith('=') && i + 1 < rawLines.length) {
+        line = line.slice(0, -1) + rawLines[++i];
+      }
+    }
+    cur.push(line);
+  }
+  return cards.map(linesToContact);
+}
+
+function displayName(c) {
+  const n = [c.n.prefix, c.n.given, c.n.middle, c.n.family, c.n.suffix].filter(Boolean).join(' ').trim();
+  return n || c.fn || c.org || c.telCell || c.telHome || c.telWork || c.emails.find(Boolean) || 'Unnamed';
+}
+
+function safeCut(s, n) {
+  if (n < s.length) {
+    const code = s.charCodeAt(n - 1);
+    if (code >= 0xD800 && code <= 0xDBFF) n -= 1;
+  }
+  return n;
+}
+
+function fold(line) {
+  if (line.length <= 75) return line;
+  let cut = safeCut(line, 75);
+  const out = [line.slice(0, cut)];
+  let rest = line.slice(cut);
+  while (rest.length > 74) {
+    cut = safeCut(rest, 74);
+    out.push(' ' + rest.slice(0, cut));
+    rest = rest.slice(cut);
+  }
+  if (rest) out.push(' ' + rest);
+  return out.join('\r\n');
+}
+
+function adrLine(type, a) {
+  if (!(a.street || a.city || a.region || a.postal || a.country)) return null;
+  return 'ADR;TYPE=' + type + ':;;' + [a.street, a.city, a.region, a.postal, a.country].map(esc).join(';');
+}
+
+function contactToLines(c) {
+  const L = ['BEGIN:VCARD', 'VERSION:3.0'];
+  L.push('N:' + [c.n.family, c.n.given, c.n.middle, c.n.prefix, c.n.suffix].map(esc).join(';'));
+  L.push('FN:' + esc(displayName(c)));
+  if (c.org) L.push('ORG:' + esc(c.org));
+  if (c.bday) L.push('BDAY:' + c.bday);
+  const ah = adrLine('HOME', c.adrHome); if (ah) L.push(ah);
+  const aw = adrLine('WORK', c.adrWork); if (aw) L.push(aw);
+  if (c.telCell) L.push('TEL;TYPE=CELL:' + esc(c.telCell));
+  if (c.telHome) L.push('TEL;TYPE=HOME,VOICE:' + esc(c.telHome));
+  if (c.telWork) L.push('TEL;TYPE=WORK,VOICE:' + esc(c.telWork));
+  c.emails.forEach(e => { if (e) L.push('EMAIL;TYPE=INTERNET:' + esc(e)); });
+  if (c.url) L.push('URL:' + esc(c.url));
+  if (c.note) L.push('NOTE:' + esc(c.note));
+  if (c.photo) {
+    if (c.photo.url) L.push('PHOTO;VALUE=URI:' + c.photo.url);
+    else if (c.photo.data) {
+      const t = (c.photo.mime || 'image/jpeg').split('/')[1].toUpperCase();
+      L.push('PHOTO;ENCODING=b;TYPE=' + t + ':' + c.photo.data);
+    }
+  }
+  for (const x of c.extras) L.push(x);
+  L.push('END:VCARD');
+  return L;
+}
+
+function serializeVCF(contacts) {
+  return contacts.map(c => contactToLines(c).map(fold).join('\r\n')).join('\r\n') + '\r\n';
+}
+
+/* ============ App ============ */
+
+const $ = id => document.getElementById(id);
+const state = { contacts: [], selectedId: null, filter: '', dirty: false, flipped: false };
+
+const els = {
+  list: $('list'), rail: $('rail'), q: $('q'),
+  empty: $('empty'), cardwrap: $('cardwrap'), flipper: $('flipper'),
+  cardtab: $('cardtab'), headName: $('headName'), headSub: $('headSub'),
+  photo: $('photo'), photoImg: $('photoImg'), photoInitial: $('photoInitial'), photoX: $('photoX'),
+  agechip: $('agechip'), rawpre: $('rawpre'), countLabel: $('countLabel'),
+  extrasNote: $('extrasNote'),
+  adrHomePrev: $('adrHomePrev'), adrWorkPrev: $('adrWorkPrev'),
+  fileInput: $('fileInput'), photoInput: $('photoInput'),
+  toasthold: $('toasthold'), dropveil: $('dropveil')
+};
+
+/* ---- helpers ---- */
+function getPath(o, p) { return p.split('.').reduce((a, k) => a == null ? a : a[k], o); }
+function setPath(o, p, v) { const ks = p.split('.'); for (let i = 0; i < ks.length - 1; i++) o = o[ks[i]]; o[ks[ks.length - 1]] = v; }
+function selected() { return state.contacts.find(c => c.id === state.selectedId) || null; }
+function initialOf(c) { const ch = Array.from(displayName(c))[0] || '?'; return ch.toUpperCase(); }
+function letterBucket(c) { const i = initialOf(c); return /^[A-Z]$/.test(i) ? i : '#'; }
+function setDirty(d) { state.dirty = d; document.body.classList.toggle('dirty', d); }
+function toast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  els.toasthold.appendChild(t);
+  setTimeout(() => t.remove(), 2600);
+}
+function sortContacts() {
+  state.contacts.sort((a, b) => displayName(a).localeCompare(displayName(b), undefined, { sensitivity: 'base', numeric: true }));
+}
+function ageOf(bday) {
+  if (!bday) return null;
+  const b = new Date(bday + 'T00:00:00'); if (isNaN(b)) return null;
+  const now = new Date();
+  let age = now.getFullYear() - b.getFullYear();
+  if (now.getMonth() < b.getMonth() || (now.getMonth() === b.getMonth() && now.getDate() < b.getDate())) age--;
+  return age >= 0 && age < 130 ? age : null;
+}
+function subLine(c) { return c.org || c.telCell || c.telHome || c.emails.find(Boolean) || ''; }
+function photoSrc(c) {
+  if (!c.photo) return null;
+  if (c.photo.url) return c.photo.url;
+  if (c.photo.data) return 'data:' + (c.photo.mime || 'image/jpeg') + ';base64,' + c.photo.data;
+  return null;
+}
+
+/* ---- list ---- */
+function filteredContacts() {
+  const f = state.filter.trim().toLowerCase();
+  if (!f) return state.contacts;
+  return state.contacts.filter(c => {
+    const hay = [displayName(c), c.org, c.telCell, c.telHome, c.telWork, ...c.emails].join(' ').toLowerCase();
+    return hay.includes(f);
+  });
+}
+
+function renderList() {
+  const shown = filteredContacts();
+  els.list.innerHTML = '';
+  if (!shown.length) {
+    const d = document.createElement('div');
+    d.className = 'list-empty';
+    d.textContent = state.contacts.length
+      ? 'No matches. Try fewer letters.'
+      : 'No contacts yet. Load a .vcf or create one.';
+    els.list.appendChild(d);
+  }
+  const frag = document.createDocumentFragment();
+  for (const c of shown) {
+    const b = document.createElement('button');
+    b.className = 'row' + (c.id === state.selectedId ? ' sel' : '');
+    b.dataset.id = c.id;
+    b.dataset.letter = letterBucket(c);
+    b.setAttribute('role', 'option');
+    const av = document.createElement('span'); av.className = 'avatar';
+    const src = photoSrc(c);
+    if (src) { const im = document.createElement('img'); im.src = src; im.alt = ''; av.appendChild(im); }
+    else av.textContent = initialOf(c);
+    const meta = document.createElement('span'); meta.className = 'row-meta';
+    const nm = document.createElement('span'); nm.className = 'row-name'; nm.textContent = displayName(c);
+    const sb = document.createElement('span'); sb.className = 'row-sub'; sb.textContent = subLine(c);
+    meta.append(nm, sb);
+    b.append(av, meta);
+    frag.appendChild(b);
+  }
+  els.list.appendChild(frag);
+  renderRail(shown);
+  renderCount(shown.length);
+}
+
+function renderRail(shown) {
+  const have = new Set(shown.map(letterBucket));
+  els.rail.innerHTML = '';
+  for (const L of [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ', '#']) {
+    const b = document.createElement('button');
+    b.textContent = L;
+    b.disabled = !have.has(L);
+    b.addEventListener('click', () => {
+      const row = els.list.querySelector('.row[data-letter="' + CSS.escape(L) + '"]');
+      if (row) row.scrollIntoView({ block: 'start' });
+    });
+    els.rail.appendChild(b);
+  }
+}
+
+function renderCount(shownN) {
+  const n = state.contacts.length;
+  els.countLabel.textContent = n + ' contact' + (n === 1 ? '' : 's') +
+    (shownN !== n ? ' · ' + shownN + ' shown' : '');
+}
+
+/* ---- card ---- */
+function renderCard() {
+  const c = selected();
+  if (!c) {
+    els.cardwrap.hidden = true;
+    els.empty.hidden = false;
+    document.body.classList.remove('mob-card');
+    return;
+  }
+  els.empty.hidden = true;
+  els.cardwrap.hidden = false;
+
+  document.querySelectorAll('[data-bind]').forEach(inp => {
+    inp.value = getPath(c, inp.dataset.bind) || '';
+  });
+  refreshHead(c);
+  refreshPhoto(c);
+  refreshAdrPreviews(c);
+  refreshAge(c);
+  refreshExtrasNote(c);
+  $('adrHomeBox').open = !!(c.adrHome.street || c.adrHome.city);
+  $('adrWorkBox').open = !!(c.adrWork.street || c.adrWork.city);
+  if (state.flipped) renderRaw();
+}
+
+function refreshHead(c) {
+  els.headName.textContent = displayName(c);
+  els.headSub.textContent = subLine(c);
+  els.cardtab.textContent = initialOf(c);
+}
+function refreshPhoto(c) {
+  const src = photoSrc(c);
+  els.photoImg.hidden = !src;
+  els.photoInitial.hidden = !!src;
+  els.photo.classList.toggle('haspic', !!src);
+  if (src) els.photoImg.src = src; else { els.photoImg.removeAttribute('src'); els.photoInitial.textContent = initialOf(c); }
+}
+function refreshAdrPreviews(c) {
+  const j = a => [a.street, a.city, a.region, a.postal, a.country].filter(Boolean).join(', ');
+  els.adrHomePrev.textContent = j(c.adrHome);
+  els.adrWorkPrev.textContent = j(c.adrWork);
+}
+function refreshAge(c) {
+  const a = ageOf(c.bday);
+  els.agechip.hidden = a == null;
+  if (a != null) els.agechip.textContent = 'Age ' + a;
+}
+function refreshExtrasNote(c) {
+  const n = c.extras.length;
+  els.extrasNote.hidden = !n;
+  if (n) els.extrasNote.textContent = n + ' extra propert' + (n === 1 ? 'y' : 'ies') + ' from the original file will be kept on export';
+}
+
+function renderRaw() {
+  const c = selected();
+  if (!c) { els.rawpre.textContent = ''; return; }
+  const txt = serializeVCF([c]).replace(/\r\n/g, '\n');
+  els.rawpre.innerHTML = '';
+  for (const line of txt.split('\n')) {
+    const i = line.indexOf(':');
+    if (i > 0 && !line.startsWith(' ')) {
+      const k = document.createElement('span'); k.className = 'k'; k.textContent = line.slice(0, i);
+      els.rawpre.append(k, line.slice(i) + '\n');
+    } else {
+      els.rawpre.append(line + '\n');
+    }
+  }
+}
+
+function selectContact(id, opts = {}) {
+  state.selectedId = id;
+  els.list.querySelectorAll('.row').forEach(r => r.classList.toggle('sel', r.dataset.id === id));
+  const c = selected();
+  if (c) {
+    document.body.classList.add('mob-card');
+    if (state.flipped && !opts.keepFlip) unflip(true);
+    renderCard();
+    const row = els.list.querySelector('.row[data-id="' + id + '"]');
+    if (row && opts.scroll && row.scrollIntoView) row.scrollIntoView({ block: 'nearest' });
+  } else {
+    renderCard();
+  }
+}
+
+/* ---- flip ---- */
+function flip() {
+  state.flipped = true;
+  renderRaw();
+  const front = els.flipper.querySelector('.face-front');
+  els.flipper.style.minHeight = front.offsetHeight + 'px';
+  els.flipper.classList.add('flip');
+}
+function unflip() {
+  state.flipped = false;
+  els.flipper.classList.remove('flip');
+  els.flipper.style.minHeight = '';
+}
+
+/* ---- mutations ---- */
+function ingestTexts(texts) {
+  let added = 0;
+  for (const t of texts) {
+    const cards = parseVCF(t);
+    added += cards.length;
+    state.contacts.push(...cards);
+  }
+  if (!added) { toast('No contacts found in that file'); return; }
+  sortContacts();
+  setDirty(true);
+  renderList();
+  if (!selected()) selectContact(state.contacts[0].id, { scroll: true });
+  else renderCard();
+  toast('Imported ' + added + ' contact' + (added === 1 ? '' : 's'));
+}
+
+function importFiles(fileList) {
+  const files = Array.from(fileList || []);
+  if (!files.length) return;
+  Promise.all(files.map(f => f.text().catch(() => ''))).then(ingestTexts);
+}
+
+/* Desktop (Neutralino) native open dialog — used when running as the .exe */
+async function openFilesNative() {
+  try {
+    const picks = await Neutralino.os.showOpenDialog('Load vCards', {
+      multiSelections: true,
+      filters: [{ name: 'vCard files', extensions: ['vcf', 'vcard'] }, { name: 'All files', extensions: ['*'] }]
+    });
+    if (!picks || !picks.length) return;
+    const texts = [];
+    for (const p of picks) {
+      try { texts.push(await Neutralino.filesystem.readFile(p)); } catch (e) {}
+    }
+    ingestTexts(texts);
+  } catch (e) {}
+}
+
+function newContact() {
+  const c = blankContact();
+  state.contacts.push(c);
+  setDirty(true);
+  renderList();
+  selectContact(c.id, { scroll: true });
+  const first = document.querySelector('[data-bind="n.given"]');
+  if (first) first.focus();
+}
+
+function deleteSelected() {
+  const c = selected();
+  if (!c) return;
+  if (!confirm('Delete "' + displayName(c) + '"?\nThis only changes the file you export — your phone is untouched.')) return;
+  const idx = state.contacts.indexOf(c);
+  state.contacts.splice(idx, 1);
+  setDirty(true);
+  const next = state.contacts[idx] || state.contacts[idx - 1];
+  renderList();
+  if (next) selectContact(next.id, { scroll: true });
+  else { state.selectedId = null; renderCard(); document.body.classList.remove('mob-card'); }
+  toast('Card deleted');
+}
+
+async function download(text, filename) {
+  if (window.Neutralino) {
+    try {
+      const p = await Neutralino.os.showSaveDialog('Export vCard', {
+        defaultPath: filename,
+        filters: [{ name: 'vCard', extensions: ['vcf'] }]
+      });
+      if (!p) return false;
+      await Neutralino.filesystem.writeFile(p, text);
+      return true;
+    } catch (e) { toast("Couldn't save the file"); return false; }
+  }
+  const blob = new Blob([text], { type: 'text/vcard;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+  return true;
+}
+function stamp() {
+  const d = new Date();
+  return d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+}
+async function exportAll() {
+  if (!state.contacts.length) { toast('Nothing to export yet'); return; }
+  const ok = await download(serializeVCF(state.contacts), 'contacts-' + stamp() + '.vcf');
+  if (!ok) return;
+  setDirty(false);
+  toast('Exported ' + state.contacts.length + ' contacts');
+}
+async function exportOne() {
+  const c = selected(); if (!c) return;
+  const slug = displayName(c).replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'contact';
+  const ok = await download(serializeVCF([c]), slug + '.vcf');
+  if (ok) toast('Exported ' + displayName(c));
+}
+
+/* ---- photo ---- */
+function pickPhoto(file) {
+  const c = selected(); if (!c || !file) return;
+  const img = new Image();
+  const url = URL.createObjectURL(file);
+  img.onload = () => {
+    const MAX = 384;
+    const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+    const w = Math.max(1, Math.round(img.width * scale));
+    const h = Math.max(1, Math.round(img.height * scale));
+    const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+    cv.getContext('2d').drawImage(img, 0, 0, w, h);
+    const dataUrl = cv.toDataURL('image/jpeg', 0.85);
+    c.photo = { data: dataUrl.split(',')[1], mime: 'image/jpeg' };
+    URL.revokeObjectURL(url);
+    setDirty(true);
+    refreshPhoto(c);
+    renderList();
+    if (state.flipped) renderRaw();
+  };
+  img.onerror = () => { URL.revokeObjectURL(url); toast("Couldn't read that image"); };
+  img.src = url;
+}
+
+/* ---- wiring ---- */
+const openFiles = () => window.Neutralino ? openFilesNative() : els.fileInput.click();
+$('loadBtn').addEventListener('click', openFiles);
+$('emptyLoad').addEventListener('click', openFiles);
+$('newBtn').addEventListener('click', newContact);
+$('emptyNew').addEventListener('click', newContact);
+$('exportBtn').addEventListener('click', exportAll);
+$('exportOneBtn').addEventListener('click', exportOne);
+$('deleteBtn').addEventListener('click', deleteSelected);
+$('flipBtn').addEventListener('click', flip);
+$('unflipBtn').addEventListener('click', () => unflip());
+$('backBtn').addEventListener('click', () => document.body.classList.remove('mob-card'));
+$('copyRawBtn').addEventListener('click', () => {
+  const c = selected(); if (!c) return;
+  const txt = serializeVCF([c]);
+  (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject())
+    .then(() => toast('Raw vCard copied'))
+    .catch(() => toast("Couldn't copy — select the text manually"));
+});
+
+els.fileInput.addEventListener('change', e => { importFiles(e.target.files); e.target.value = ''; });
+els.photoInput.addEventListener('change', e => { pickPhoto(e.target.files[0]); e.target.value = ''; });
+
+els.photo.addEventListener('click', e => {
+  if (e.target === els.photoX) return;
+  els.photoInput.click();
+});
+els.photo.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); els.photoInput.click(); }
+});
+els.photoX.addEventListener('click', e => {
+  e.stopPropagation();
+  const c = selected(); if (!c) return;
+  c.photo = null;
+  setDirty(true);
+  refreshPhoto(c); renderList();
+  if (state.flipped) renderRaw();
+});
+
+els.list.addEventListener('click', e => {
+  const row = e.target.closest('.row');
+  if (row) selectContact(row.dataset.id);
+});
+
+els.q.addEventListener('input', () => {
+  state.filter = els.q.value;
+  renderList();
+});
+els.q.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { els.q.value = ''; state.filter = ''; renderList(); }
+});
+document.addEventListener('keydown', e => {
+  if (e.key === '/' && !/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)) {
+    e.preventDefault(); els.q.focus();
+  }
+});
+
+/* live field binding */
+document.querySelectorAll('[data-bind]').forEach(inp => {
+  inp.addEventListener('input', () => {
+    const c = selected(); if (!c) return;
+    setPath(c, inp.dataset.bind, inp.value);
+    setDirty(true);
+    if (inp.hasAttribute('data-namefield')) {
+      refreshHead(c);
+      const row = els.list.querySelector('.row[data-id="' + c.id + '"]');
+      if (row) {
+        row.querySelector('.row-name').textContent = displayName(c);
+        row.querySelector('.row-sub').textContent = subLine(c);
+        row.dataset.letter = letterBucket(c);
+        const av = row.querySelector('.avatar');
+        if (!av.querySelector('img')) av.textContent = initialOf(c);
+      }
+    }
+    if (inp.dataset.bind === 'bday') refreshAge(c);
+    if (inp.dataset.bind.startsWith('adr')) refreshAdrPreviews(c);
+    if (inp.dataset.bind.startsWith('tel') || inp.dataset.bind.startsWith('emails')) {
+      els.headSub.textContent = subLine(c);
+    }
+  });
+  inp.addEventListener('change', () => {
+    if (inp.hasAttribute('data-namefield')) {
+      const keep = state.selectedId;
+      sortContacts();
+      renderList();
+      selectContact(keep, { scroll: true, keepFlip: true });
+    }
+  });
+});
+
+/* drag & drop */
+let dragDepth = 0;
+window.addEventListener('dragenter', e => {
+  if (e.dataTransfer && Array.from(e.dataTransfer.types).includes('Files')) {
+    dragDepth++;
+    els.dropveil.classList.add('on');
+  }
+});
+window.addEventListener('dragleave', () => {
+  dragDepth = Math.max(0, dragDepth - 1);
+  if (!dragDepth) els.dropveil.classList.remove('on');
+});
+window.addEventListener('dragover', e => e.preventDefault());
+window.addEventListener('drop', e => {
+  e.preventDefault();
+  dragDepth = 0;
+  els.dropveil.classList.remove('on');
+  importFiles(e.dataTransfer.files);
+});
+
+window.addEventListener('beforeunload', e => {
+  if (state.dirty && state.contacts.length) { e.preventDefault(); e.returnValue = ''; }
+});
+
+/* init */
+if (window.Neutralino) { try { Neutralino.init(); } catch (e) {} }
+if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !window.Neutralino) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+}
+renderList();
+renderCard();
+</script>
+</body>
+</html>

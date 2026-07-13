@@ -257,10 +257,6 @@ details.adr summary .adr-preview{
 }
 .empty h2{font-stretch:112%;font-weight:800;font-size:21px;margin-bottom:8px}
 .empty p{color:var(--ink-soft);max-width:420px;margin:0 auto 20px}
-.empty .privline{
-  font-family:var(--mono);font-size:11px;color:var(--pen);
-  margin-top:22px;letter-spacing:.04em;
-}
 .empty-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 
 /* status bar */
@@ -316,11 +312,15 @@ body.dirty .status .flagged{display:inline-flex}
 <body>
 
 <header class="top">
-  <div class="brand">CARDFILE<span class="dot">.</span>VCF <span class="brand-sub">vCard editor · works offline</span></div>
+  <div class="brand">CARDFILE<span class="dot">.</span>VCF <span class="brand-sub">vCard editor</span></div>
   <div class="top-actions">
     <button class="btn backbtn" id="backBtn" aria-label="Back to list">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M15 5l-7 7 7 7"/></svg>
       List
+    </button>
+    <button class="btn" id="homeBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10V20h13V10"/></svg>
+      Home
     </button>
     <button class="btn" id="loadBtn">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 16V4m0 0L7 9m5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
@@ -358,7 +358,6 @@ body.dirty .status .flagged{display:inline-flex}
           <button class="btn btn-primary" id="emptyLoad">Load vCards…</button>
           <button class="btn" id="emptyNew">New contact</button>
         </div>
-        <div class="privline">100% on-device · no upload · no account · no API</div>
       </div>
 
       <div class="cardwrap" id="cardwrap" hidden>
@@ -1092,6 +1091,8 @@ function pickPhoto(file) {
 }
 
 /* ---- wiring ---- */
+const HOME_URL = 'https://anishbhattarai-asm.github.io/'; /* <-- change this one line to your portfolio URL */
+$('homeBtn').addEventListener('click', () => { location.href = HOME_URL; });
 const openFiles = () => window.Neutralino ? openFilesNative() : els.fileInput.click();
 $('loadBtn').addEventListener('click', openFiles);
 $('emptyLoad').addEventListener('click', openFiles);
@@ -1206,7 +1207,7 @@ window.addEventListener('beforeunload', e => {
 });
 
 /* init */
-if (window.Neutralino) { try { Neutralino.init(); } catch (e) {} }
+if (window.Neutralino) { try { Neutralino.init(); } catch (e) {} $('homeBtn').style.display = 'none'; }
 if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !window.Neutralino) {
   window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
 }

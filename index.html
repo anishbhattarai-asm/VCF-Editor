@@ -47,7 +47,6 @@ body{
 button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
 input,textarea,select{font:inherit;color:inherit}
 
-/* ---------- header ---------- */
 .top{
   display:flex;align-items:center;gap:16px;flex-wrap:wrap;
   padding:12px 18px;
@@ -80,7 +79,6 @@ input,textarea,select{font:inherit;color:inherit}
 .btn-danger:hover{border-color:var(--danger)}
 .btn svg{flex:none}
 
-/* ---------- layout ---------- */
 .split{flex:1;display:flex;min-height:0}
 .drawer{
   width:320px;flex:none;display:flex;flex-direction:column;min-height:0;
@@ -88,7 +86,6 @@ input,textarea,select{font:inherit;color:inherit}
 }
 .stage{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0;overflow:auto;background:var(--steel-100)}
 
-/* ---------- drawer ---------- */
 .searchwrap{padding:12px 12px 8px}
 .search{
   width:100%;padding:9px 12px 9px 34px;
@@ -131,7 +128,6 @@ input,textarea,select{font:inherit;color:inherit}
 .rail button:disabled{color:var(--ink-faint);opacity:.45;cursor:default;background:none}
 .list-empty{padding:26px 18px;color:var(--ink-soft);font-size:13px}
 
-/* ---------- stage / card ---------- */
 .stagepad{padding:22px;max-width:780px;width:100%;margin:0 auto}
 .cardwrap{perspective:1800px}
 .flipper{position:relative;transform-style:preserve-3d;transition:transform .55s cubic-bezier(.2,.75,.25,1)}
@@ -148,7 +144,6 @@ input,textarea,select{font:inherit;color:inherit}
   display:flex;flex-direction:column;overflow:hidden;
 }
 
-/* index-card tab */
 .cardtab{
   position:absolute;top:-13px;left:22px;
   background:var(--pen);color:#fff;
@@ -191,7 +186,6 @@ input,textarea,select{font:inherit;color:inherit}
 }
 .mini:hover{border-color:var(--ink-faint)}
 
-/* form */
 .form{padding:20px 24px 24px;display:flex;flex-direction:column;gap:16px}
 .frow{display:grid;grid-template-columns:132px 1fr;gap:12px;align-items:center}
 .frow > label{
@@ -236,7 +230,6 @@ details.adr summary .adr-preview{
   padding:14px 24px;border-top:1px solid var(--steel-200);
 }
 
-/* raw back */
 .rawhead{
   display:flex;align-items:center;gap:10px;flex:none;
   padding:14px 18px;border-bottom:1px solid var(--steel-200);
@@ -250,7 +243,6 @@ details.adr summary .adr-preview{
 }
 .rawpre .k{color:var(--pen);font-weight:600}
 
-/* empty state */
 .empty{
   border:2px dashed var(--steel-300);border-radius:14px;background:transparent;
   padding:60px 30px;text-align:center;margin-top:14px;
@@ -259,7 +251,6 @@ details.adr summary .adr-preview{
 .empty p{color:var(--ink-soft);max-width:420px;margin:0 auto 20px}
 .empty-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 
-/* status bar */
 .status{
   flex:none;display:flex;align-items:center;gap:14px;
   padding:7px 18px;border-top:1px solid var(--hairline);background:var(--steel-200);
@@ -270,7 +261,6 @@ details.adr summary .adr-preview{
 body.dirty .status .flagged{display:inline-flex}
 .status .spacer{flex:1}
 
-/* toasts + drop veil */
 .toasthold{position:fixed;bottom:44px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:60;pointer-events:none}
 .toast{
   background:var(--ink);color:#fff;font-size:12.5px;font-weight:500;
@@ -290,7 +280,6 @@ body.dirty .status .flagged{display:inline-flex}
   padding:12px 22px;border-radius:10px;letter-spacing:.02em;
 }
 
-/* mobile */
 .backbtn{display:none}
 @media (max-width:880px){
   body{overflow:auto}
@@ -505,7 +494,6 @@ body.dirty .status .flagged{display:inline-flex}
 <div class="dropveil" id="dropveil"><span>Drop .vcf to import</span></div>
 
 <script>
-/* ============ vCard core: parse + serialize (2.1 / 3.0 / 4.0 tolerant) ============ */
 
 function decodeQP(s) {
   const bytes = [];
@@ -546,7 +534,7 @@ function splitEsc(s, sep) {
 
 function parseProp(line) {
   let inQ = false, idx = -1;
-  for (let i = 0; i < line.length; i++) {
+  for (let i = 0; i < i = line.length, line.length > i; i++) {
     const c = line[i];
     if (c === '"') inQ = !inQ;
     else if (c === ':' && !inQ) { idx = i; break; }
@@ -753,8 +741,6 @@ function serializeVCF(contacts) {
   return contacts.map(c => contactToLines(c).map(fold).join('\r\n')).join('\r\n') + '\r\n';
 }
 
-/* ============ App ============ */
-
 const $ = id => document.getElementById(id);
 const state = { contacts: [], selectedId: null, filter: '', dirty: false, flipped: false };
 
@@ -770,7 +756,6 @@ const els = {
   toasthold: $('toasthold'), dropveil: $('dropveil')
 };
 
-/* ---- helpers ---- */
 function getPath(o, p) { return p.split('.').reduce((a, k) => a == null ? a : a[k], o); }
 function setPath(o, p, v) { const ks = p.split('.'); for (let i = 0; i < ks.length - 1; i++) o = o[ks[i]]; o[ks[ks.length - 1]] = v; }
 function selected() { return state.contacts.find(c => c.id === state.selectedId) || null; }
@@ -802,7 +787,6 @@ function photoSrc(c) {
   return null;
 }
 
-/* ---- list ---- */
 function filteredContacts() {
   const f = state.filter.trim().toLowerCase();
   if (!f) return state.contacts;
@@ -867,7 +851,6 @@ function renderCount(shownN) {
     (shownN !== n ? ' · ' + shownN + ' shown' : '');
 }
 
-/* ---- card ---- */
 function renderCard() {
   const c = selected();
   if (!c) {
@@ -951,7 +934,6 @@ function selectContact(id, opts = {}) {
   }
 }
 
-/* ---- flip ---- */
 function flip() {
   state.flipped = true;
   renderRaw();
@@ -965,7 +947,6 @@ function unflip() {
   els.flipper.style.minHeight = '';
 }
 
-/* ---- mutations ---- */
 function ingestTexts(texts) {
   let added = 0;
   for (const t of texts) {
@@ -988,7 +969,6 @@ function importFiles(fileList) {
   Promise.all(files.map(f => f.text().catch(() => ''))).then(ingestTexts);
 }
 
-/* Desktop (Neutralino) native open dialog — used when running as the .exe */
 async function openFilesNative() {
   try {
     const picks = await Neutralino.os.showOpenDialog('Load vCards', {
@@ -1066,7 +1046,6 @@ async function exportOne() {
   if (ok) toast('Exported ' + displayName(c));
 }
 
-/* ---- photo ---- */
 function pickPhoto(file) {
   const c = selected(); if (!c || !file) return;
   const img = new Image();
@@ -1090,8 +1069,7 @@ function pickPhoto(file) {
   img.src = url;
 }
 
-/* ---- wiring ---- */
-const HOME_URL = 'https://anishbhattarai-asm.github.io/VCF-Editor/'; /* <-- change this one line to your portfolio URL */
+const HOME_URL = 'https://anishbhattarai-asm.github.io/VCF-Editor/'; 
 $('homeBtn').addEventListener('click', () => { location.href = HOME_URL; });
 const openFiles = () => window.Neutralino ? openFilesNative() : els.fileInput.click();
 $('loadBtn').addEventListener('click', openFiles);
@@ -1149,7 +1127,6 @@ document.addEventListener('keydown', e => {
   }
 });
 
-/* live field binding */
 document.querySelectorAll('[data-bind]').forEach(inp => {
   inp.addEventListener('input', () => {
     const c = selected(); if (!c) return;
@@ -1182,7 +1159,6 @@ document.querySelectorAll('[data-bind]').forEach(inp => {
   });
 });
 
-/* drag & drop */
 let dragDepth = 0;
 window.addEventListener('dragenter', e => {
   if (e.dataTransfer && Array.from(e.dataTransfer.types).includes('Files')) {
@@ -1206,7 +1182,6 @@ window.addEventListener('beforeunload', e => {
   if (state.dirty && state.contacts.length) { e.preventDefault(); e.returnValue = ''; }
 });
 
-/* init */
 if (window.Neutralino) { try { Neutralino.init(); } catch (e) {} $('homeBtn').style.display = 'none'; }
 if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0 && !window.Neutralino) {
   window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
